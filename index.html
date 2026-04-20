@@ -6,22 +6,117 @@
     <title>スキル評価チャート</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f4f7f6; }
-        .control-panel { background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        body { 
+            font-family: sans-serif; 
+            padding: 15px; 
+            max-width: 800px; 
+            margin: auto; 
+            background-color: #f4f7f6; 
+            color: #333;
+        }
+        .control-panel { 
+            background: #ffffff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; 
+        }
         
-        /* 名前入力欄のスタイル（大きく目立たせる） */
-        .name-input-wrapper { margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .name-input-wrapper label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
-        #staffName { font-size: 1.5em; padding: 10px; width: 100%; max-width: 400px; border: 1px solid #ccc; border-radius: 5px; }
+        /* 名前入力欄 */
+        .name-input-wrapper { 
+            margin-bottom: 20px; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 15px; 
+        }
+        .name-input-wrapper label { 
+            font-weight: bold; 
+            display: block; 
+            margin-bottom: 8px; 
+        }
+        #staffName { 
+            font-size: 1.2em; 
+            padding: 10px; 
+            width: 100%; 
+            max-width: 400px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            box-sizing: border-box;
+        }
         
-        /* スライダーのスタイル */
-        .slider-row { display: flex; align-items: center; margin-bottom: 15px; }
-        .slider-row label { width: 160px; font-weight: bold; color: #555; }
-        .slider-row input[type="range"] { flex-grow: 1; margin: 0 15px; cursor: pointer; }
-        .slider-row span { width: 40px; text-align: right; font-size: 1.2em; font-weight: bold; color: #007bff; }
+        /* スライダー */
+        .slider-row { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 15px; 
+        }
+        .slider-row label { 
+            width: 140px; 
+            font-weight: bold; 
+            font-size: 0.9em;
+        }
+        .slider-row input[type="range"] { 
+            flex-grow: 1; 
+            margin: 0 10px; 
+            cursor: pointer; 
+        }
+        .slider-row span { 
+            width: 35px; 
+            text-align: right; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            color: #007bff; 
+        }
+
+        /* スマホ向けのレイアウト調整（画面幅が600px以下の場合） */
+        @media (max-width: 600px) {
+            .slider-row { 
+                flex-wrap: wrap; 
+                margin-bottom: 20px;
+            }
+            .slider-row label { 
+                width: 100%; 
+                margin-bottom: 5px; 
+            }
+            .slider-row input[type="range"] { 
+                margin: 0; 
+                width: calc(100% - 50px); 
+            }
+        }
         
         /* グラフエリア */
-        .chart-container { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; height: 500px; width: 100%; }
+        .chart-container { 
+            background: #ffffff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            position: relative; 
+            height: 400px; /* スマホでも見やすい高さに調整 */
+            width: 100%; 
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        /* ダウンロードボタン */
+        .btn-download {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto 30px;
+            padding: 15px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            transition: background-color 0.2s;
+        }
+        .btn-download:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -40,13 +135,14 @@
         <canvas id="myChart"></canvas>
     </div>
 
+    <button class="btn-download" onclick="downloadChart()">グラフを画像として保存</button>
+
     <script>
-        // 評価項目
+        // 評価項目と初期値
         const labels = ['①キャッチ力', '②ヒアリング力', '③クロージング力', '④活気・雰囲気', '⑤メンタル・集中力'];
-        // 各項目の初期値
         let dataValues = [60, 70, 50, 80, 60];
         
-        // --- 1. スライダーのHTMLを生成 ---
+        // 1. スライダーのHTMLを生成
         const slidersDiv = document.getElementById('sliders');
         labels.forEach((label, index) => {
             const row = document.createElement('div');
@@ -59,17 +155,30 @@
             slidersDiv.appendChild(row);
         });
 
-        // --- 2. Chart.jsでレーダーチャートを描画 ---
+        // グラフの背景を白く塗りつぶすプラグイン（画像保存時に背景が黒くなるのを防ぐ）
+        const customCanvasBackgroundColor = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart, args, options) => {
+                const {ctx} = chart;
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = options.color || '#ffffff';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        // 2. Chart.jsでレーダーチャートを描画
         const ctx = document.getElementById('myChart').getContext('2d');
         let myRadarChart = new Chart(ctx, {
             type: 'radar',
+            plugins: [customCanvasBackgroundColor], // プラグインを登録
             data: {
                 labels: labels,
                 datasets: [{
-                    // グラフの凡例（初期値）
                     label: document.getElementById('staffName').value + ' の現在値',
                     data: dataValues,
-                    backgroundColor: 'rgba(0, 123, 255, 0.4)', // 鮮やかな青の半透明
+                    backgroundColor: 'rgba(0, 123, 255, 0.4)', 
                     borderColor: 'rgb(0, 123, 255)',
                     pointBackgroundColor: 'rgb(0, 123, 255)',
                     borderWidth: 2,
@@ -77,7 +186,7 @@
                 },
                 {
                     label: '理想の頂点（100）',
-                    data: [100, 100, 100, 100, 100], // 背景に100の枠を固定
+                    data: [100, 100, 100, 100, 100], 
                     backgroundColor: 'rgba(0, 0, 0, 0.03)',
                     borderColor: 'rgba(0, 0, 0, 0.1)',
                     borderWidth: 1,
@@ -87,33 +196,56 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    // ★ここで余白を設けることで、スマホでも文字が見切れなくなります
+                    padding: { left: 20, right: 20, top: 20, bottom: 20 }
+                },
                 scales: {
                     r: {
                         min: 0,
                         max: 100,
-                        ticks: { stepSize: 20 },
-                        pointLabels: { font: { size: 14, weight: 'bold' } }
+                        ticks: { stepSize: 20, backdropColor: 'transparent' },
+                        pointLabels: { 
+                            font: { size: 12, weight: 'bold' } // 文字サイズを少し調整
+                        }
                     }
                 },
                 plugins: {
-                    legend: { labels: { font: { size: 14 } } }
+                    legend: { 
+                        position: 'top',
+                        labels: { font: { size: 12 } } 
+                    },
+                    customCanvasBackgroundColor: {
+                        color: '#ffffff', // 背景色を白に指定
+                    }
                 }
             }
         });
 
-        // --- 3. 動的更新の処理 ---
-        
-        // 名前の入力欄が変更されたら、即座にグラフのラベルを更新
+        // 3. 動的更新の処理
         document.getElementById('staffName').addEventListener('input', function(e) {
             myRadarChart.data.datasets[0].label = e.target.value + ' の現在値';
             myRadarChart.update();
         });
 
-        // スライダーが動かされたら、数値表示とグラフの形を更新
         function updateChart(index, value) {
-            document.getElementById('val' + index).textContent = value; // 右側の数字を更新
-            myRadarChart.data.datasets[0].data[index] = parseInt(value, 10); // グラフのデータを更新
-            myRadarChart.update(); // グラフを再描画
+            document.getElementById('val' + index).textContent = value; 
+            myRadarChart.data.datasets[0].data[index] = parseInt(value, 10); 
+            myRadarChart.update(); 
+        }
+
+        // 4. 画像ダウンロード機能
+        function downloadChart() {
+            // 対象のキャンバスを取得
+            const canvas = document.getElementById('myChart');
+            // 入力されているスタッフ名を取得（空の場合はデフォルト名）
+            const staffName = document.getElementById('staffName').value.trim() || 'スタッフ';
+            
+            // aタグを生成して画像としてダウンロードさせる
+            const link = document.createElement('a');
+            link.download = `${staffName}_スキルチャート.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
     </script>
 </body>
