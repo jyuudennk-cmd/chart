@@ -21,8 +21,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             margin-bottom: 20px; 
         }
-        
-        /* 名前入力欄 */
         .name-input-wrapper { 
             margin-bottom: 20px; 
             border-bottom: 2px solid #eee; 
@@ -42,8 +40,6 @@
             border-radius: 5px; 
             box-sizing: border-box;
         }
-        
-        /* スライダー */
         .slider-row { 
             display: flex; 
             align-items: center; 
@@ -67,7 +63,6 @@
             color: #007bff; 
         }
 
-        /* スマホ向けのレイアウト調整（画面幅が600px以下の場合） */
         @media (max-width: 600px) {
             .slider-row { 
                 flex-wrap: wrap; 
@@ -83,20 +78,18 @@
             }
         }
         
-        /* グラフエリア */
         .chart-container { 
             background: #ffffff; 
-            padding: 20px; 
+            padding: 10px; 
             border-radius: 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             position: relative; 
-            height: 400px; /* スマホでも見やすい高さに調整 */
+            height: 450px; /* 余白を増やした分、高さを少し広げました */
             width: 100%; 
             box-sizing: border-box;
             margin-bottom: 20px;
         }
 
-        /* ダウンロードボタン */
         .btn-download {
             display: block;
             width: 100%;
@@ -127,8 +120,7 @@
             <input type="text" id="staffName" value="スタッフA" placeholder="名前を入力してください">
         </div>
         
-        <div id="sliders">
-            </div>
+        <div id="sliders"></div>
     </div>
 
     <div class="chart-container">
@@ -138,11 +130,9 @@
     <button class="btn-download" onclick="downloadChart()">グラフを画像として保存</button>
 
     <script>
-        // 評価項目と初期値
         const labels = ['①キャッチ力', '②ヒアリング力', '③クロージング力', '④活気・雰囲気', '⑤メンタル・集中力'];
         let dataValues = [60, 70, 50, 80, 60];
         
-        // 1. スライダーのHTMLを生成
         const slidersDiv = document.getElementById('sliders');
         labels.forEach((label, index) => {
             const row = document.createElement('div');
@@ -155,7 +145,6 @@
             slidersDiv.appendChild(row);
         });
 
-        // グラフの背景を白く塗りつぶすプラグイン（画像保存時に背景が黒くなるのを防ぐ）
         const customCanvasBackgroundColor = {
             id: 'customCanvasBackgroundColor',
             beforeDraw: (chart, args, options) => {
@@ -168,11 +157,10 @@
             }
         };
 
-        // 2. Chart.jsでレーダーチャートを描画
         const ctx = document.getElementById('myChart').getContext('2d');
         let myRadarChart = new Chart(ctx, {
             type: 'radar',
-            plugins: [customCanvasBackgroundColor], // プラグインを登録
+            plugins: [customCanvasBackgroundColor],
             data: {
                 labels: labels,
                 datasets: [{
@@ -197,8 +185,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: {
-                    // ★ここで余白を設けることで、スマホでも文字が見切れなくなります
-                    padding: { left: 20, right: 20, top: 20, bottom: 20 }
+                    // ★左右の余白（padding）を大幅に拡大して文字の見切れを防止
+                    padding: { left: 50, right: 50, top: 20, bottom: 20 }
                 },
                 scales: {
                     r: {
@@ -206,7 +194,7 @@
                         max: 100,
                         ticks: { stepSize: 20, backdropColor: 'transparent' },
                         pointLabels: { 
-                            font: { size: 12, weight: 'bold' } // 文字サイズを少し調整
+                            font: { size: 11, weight: 'bold' } // 文字サイズをほんの少し小さくして収まりやすくしました
                         }
                     }
                 },
@@ -216,13 +204,12 @@
                         labels: { font: { size: 12 } } 
                     },
                     customCanvasBackgroundColor: {
-                        color: '#ffffff', // 背景色を白に指定
+                        color: '#ffffff',
                     }
                 }
             }
         });
 
-        // 3. 動的更新の処理
         document.getElementById('staffName').addEventListener('input', function(e) {
             myRadarChart.data.datasets[0].label = e.target.value + ' の現在値';
             myRadarChart.update();
@@ -234,14 +221,9 @@
             myRadarChart.update(); 
         }
 
-        // 4. 画像ダウンロード機能
         function downloadChart() {
-            // 対象のキャンバスを取得
             const canvas = document.getElementById('myChart');
-            // 入力されているスタッフ名を取得（空の場合はデフォルト名）
             const staffName = document.getElementById('staffName').value.trim() || 'スタッフ';
-            
-            // aタグを生成して画像としてダウンロードさせる
             const link = document.createElement('a');
             link.download = `${staffName}_スキルチャート.png`;
             link.href = canvas.toDataURL('image/png');
