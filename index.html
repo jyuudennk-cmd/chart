@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スキル評価チャート</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f4f7f6; }
+        .control-panel { background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* 名前入力欄のスタイル（大きく目立たせる） */
+        .name-input-wrapper { margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .name-input-wrapper label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
+        #staffName { font-size: 1.5em; padding: 10px; width: 100%; max-width: 400px; border: 1px solid #ccc; border-radius: 5px; }
+        
+        /* スライダーのスタイル */
+        .slider-row { display: flex; align-items: center; margin-bottom: 15px; }
+        .slider-row label { width: 160px; font-weight: bold; color: #555; }
+        .slider-row input[type="range"] { flex-grow: 1; margin: 0 15px; cursor: pointer; }
+        .slider-row span { width: 40px; text-align: right; font-size: 1.2em; font-weight: bold; color: #007bff; }
+        
+        /* グラフエリア */
+        .chart-container { background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; height: 500px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <div class="name-input-wrapper">
+            <label for="staffName">■ 評価対象スタッフ名</label>
+            <input type="text" id="staffName" value="スタッフA" placeholder="名前を入力してください">
+        </div>
+        
+        <div id="sliders">
+            </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        // 評価項目
+        const labels = ['①キャッチ力', '②ヒアリング力', '③クロージング力', '④活気・雰囲気', '⑤メンタル・集中力'];
+        // 各項目の初期値
+        let dataValues = [60, 70, 50, 80, 60];
+        
+        // --- 1. スライダーのHTMLを生成 ---
+        const slidersDiv = document.getElementById('sliders');
+        labels.forEach((label, index) => {
+            const row = document.createElement('div');
+            row.className = 'slider-row';
+            row.innerHTML = `
+                <label>${label}</label>
+                <input type="range" id="slider${index}" min="0" max="100" value="${dataValues[index]}" oninput="updateChart(${index}, this.value)">
+                <span id="val${index}">${dataValues[index]}</span>
+            `;
+            slidersDiv.appendChild(row);
+        });
+
+        // --- 2. Chart.jsでレーダーチャートを描画 ---
+        const ctx = document.getElementById('myChart').getContext('2d');
+        let myRadarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    // グラフの凡例（初期値）
+                    label: document.getElementById('staffName').value + ' の現在値',
+                    data: dataValues,
+                    backgroundColor: 'rgba(0, 123, 255, 0.4)', // 鮮やかな青の半透明
+                    borderColor: 'rgb(0, 123, 255)',
+                    pointBackgroundColor: 'rgb(0, 123, 255)',
+                    borderWidth: 2,
+                    pointRadius: 4
+                },
+                {
+                    label: '理想の頂点（100）',
+                    data: [100, 100, 100, 100, 100], // 背景に100の枠を固定
+                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    borderWidth: 1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        ticks: { stepSize: 20 },
+                        pointLabels: { font: { size: 14, weight: 'bold' } }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { font: { size: 14 } } }
+                }
+            }
+        });
+
+        // --- 3. 動的更新の処理 ---
+        
+        // 名前の入力欄が変更されたら、即座にグラフのラベルを更新
+        document.getElementById('staffName').addEventListener('input', function(e) {
+            myRadarChart.data.datasets[0].label = e.target.value + ' の現在値';
+            myRadarChart.update();
+        });
+
+        // スライダーが動かされたら、数値表示とグラフの形を更新
+        function updateChart(index, value) {
+            document.getElementById('val' + index).textContent = value; // 右側の数字を更新
+            myRadarChart.data.datasets[0].data[index] = parseInt(value, 10); // グラフのデータを更新
+            myRadarChart.update(); // グラフを再描画
+        }
+    </script>
+</body>
+</html>
