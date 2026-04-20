@@ -84,10 +84,18 @@
             border-radius: 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             position: relative; 
-            height: 450px; /* 余白を増やした分、高さを少し広げました */
+            /* グラフエリアの縦幅をしっかり確保して大きく見せます */
+            height: 500px; 
             width: 100%; 
             box-sizing: border-box;
             margin-bottom: 20px;
+        }
+
+        /* スマホ向けにグラフエリアの高さも最適化 */
+        @media (max-width: 600px) {
+            .chart-container {
+                height: 400px;
+            }
         }
 
         .btn-download {
@@ -130,105 +138,11 @@
     <button class="btn-download" onclick="downloadChart()">グラフを画像として保存</button>
 
     <script>
-        const labels = ['①キャッチ力', '②ヒアリング力', '③クロージング力', '④活気・雰囲気', '⑤メンタル・集中力'];
-        let dataValues = [60, 70, 50, 80, 60];
+        // スライダー表示用の一行ラベル
+        const sliderLabels = ['①キャッチ力', '②ヒアリング力', '③クロージング力', '④活気・雰囲気', '⑤メンタル・集中力'];
         
-        const slidersDiv = document.getElementById('sliders');
-        labels.forEach((label, index) => {
-            const row = document.createElement('div');
-            row.className = 'slider-row';
-            row.innerHTML = `
-                <label>${label}</label>
-                <input type="range" id="slider${index}" min="0" max="100" value="${dataValues[index]}" oninput="updateChart(${index}, this.value)">
-                <span id="val${index}">${dataValues[index]}</span>
-            `;
-            slidersDiv.appendChild(row);
-        });
-
-        const customCanvasBackgroundColor = {
-            id: 'customCanvasBackgroundColor',
-            beforeDraw: (chart, args, options) => {
-                const {ctx} = chart;
-                ctx.save();
-                ctx.globalCompositeOperation = 'destination-over';
-                ctx.fillStyle = options.color || '#ffffff';
-                ctx.fillRect(0, 0, chart.width, chart.height);
-                ctx.restore();
-            }
-        };
-
-        const ctx = document.getElementById('myChart').getContext('2d');
-        let myRadarChart = new Chart(ctx, {
-            type: 'radar',
-            plugins: [customCanvasBackgroundColor],
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: document.getElementById('staffName').value + ' の現在値',
-                    data: dataValues,
-                    backgroundColor: 'rgba(0, 123, 255, 0.4)', 
-                    borderColor: 'rgb(0, 123, 255)',
-                    pointBackgroundColor: 'rgb(0, 123, 255)',
-                    borderWidth: 2,
-                    pointRadius: 4
-                },
-                {
-                    label: '理想の頂点（100）',
-                    data: [100, 100, 100, 100, 100], 
-                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                    borderWidth: 1,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    // ★左右の余白（padding）を大幅に拡大して文字の見切れを防止
-                    padding: { left: 50, right: 50, top: 20, bottom: 20 }
-                },
-                scales: {
-                    r: {
-                        min: 0,
-                        max: 100,
-                        ticks: { stepSize: 20, backdropColor: 'transparent' },
-                        pointLabels: { 
-                            font: { size: 11, weight: 'bold' } // 文字サイズをほんの少し小さくして収まりやすくしました
-                        }
-                    }
-                },
-                plugins: {
-                    legend: { 
-                        position: 'top',
-                        labels: { font: { size: 12 } } 
-                    },
-                    customCanvasBackgroundColor: {
-                        color: '#ffffff',
-                    }
-                }
-            }
-        });
-
-        document.getElementById('staffName').addEventListener('input', function(e) {
-            myRadarChart.data.datasets[0].label = e.target.value + ' の現在値';
-            myRadarChart.update();
-        });
-
-        function updateChart(index, value) {
-            document.getElementById('val' + index).textContent = value; 
-            myRadarChart.data.datasets[0].data[index] = parseInt(value, 10); 
-            myRadarChart.update(); 
-        }
-
-        function downloadChart() {
-            const canvas = document.getElementById('myChart');
-            const staffName = document.getElementById('staffName').value.trim() || 'スタッフ';
-            const link = document.createElement('a');
-            link.download = `${staffName}_スキルチャート.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }
-    </script>
-</body>
-</html>
+        // ★グラフ描画用の改行ラベル（配列にすることでChart.jsが複数行で表示し、横幅を節約します）
+        const chartLabels = [
+            '①キャッチ力', 
+            ['②ヒアリング','力'], 
+            ['③クロージング','力
