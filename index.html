@@ -145,4 +145,110 @@
         const chartLabels = [
             '①キャッチ力', 
             ['②ヒアリング','力'], 
-            ['③クロージング','力
+            ['③クロージング','力'], 
+            ['④活気・','雰囲気'], 
+            ['⑤メンタル・','集中力']
+        ];
+        
+        let dataValues = [60, 70, 50, 80, 60];
+        
+        // 1. スライダーのHTMLを生成
+        const slidersDiv = document.getElementById('sliders');
+        sliderLabels.forEach((label, index) => {
+            const row = document.createElement('div');
+            row.className = 'slider-row';
+            row.innerHTML = `
+                <label>${label}</label>
+                <input type="range" id="slider${index}" min="0" max="100" value="${dataValues[index]}" oninput="updateChart(${index}, this.value)">
+                <span id="val${index}">${dataValues[index]}</span>
+            `;
+            slidersDiv.appendChild(row);
+        });
+
+        const customCanvasBackgroundColor = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart, args, options) => {
+                const {ctx} = chart;
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = options.color || '#ffffff';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        let myRadarChart = new Chart(ctx, {
+            type: 'radar',
+            plugins: [customCanvasBackgroundColor],
+            data: {
+                labels: chartLabels, // 改行ラベルを使用
+                datasets: [{
+                    label: document.getElementById('staffName').value + ' の現在値',
+                    data: dataValues,
+                    backgroundColor: 'rgba(0, 123, 255, 0.4)', 
+                    borderColor: 'rgb(0, 123, 255)',
+                    pointBackgroundColor: 'rgb(0, 123, 255)',
+                    borderWidth: 2,
+                    pointRadius: 4
+                },
+                {
+                    label: '理想の頂点（100）',
+                    data: [100, 100, 100, 100, 100], 
+                    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    borderWidth: 1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    // ★文字を改行して横幅を節約したため、余白を削ってグラフ本体を最大限大きくできます
+                    padding: { left: 10, right: 10, top: 15, bottom: 15 }
+                },
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        ticks: { stepSize: 20, backdropColor: 'transparent' },
+                        pointLabels: { 
+                            font: { size: 12, weight: 'bold' } 
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { 
+                        position: 'top',
+                        labels: { font: { size: 12 } } 
+                    },
+                    customCanvasBackgroundColor: {
+                        color: '#ffffff',
+                    }
+                }
+            }
+        });
+
+        document.getElementById('staffName').addEventListener('input', function(e) {
+            myRadarChart.data.datasets[0].label = e.target.value + ' の現在値';
+            myRadarChart.update();
+        });
+
+        function updateChart(index, value) {
+            document.getElementById('val' + index).textContent = value; 
+            myRadarChart.data.datasets[0].data[index] = parseInt(value, 10); 
+            myRadarChart.update(); 
+        }
+
+        function downloadChart() {
+            const canvas = document.getElementById('myChart');
+            const staffName = document.getElementById('staffName').value.trim() || 'スタッフ';
+            const link = document.createElement('a');
+            link.download = `${staffName}_スキルチャート.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
